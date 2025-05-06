@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Database, Tag, History, Search, Settings, Import, Export, Sun, Moon } from "lucide-react";
+import { Database, Tag, History, Search, Settings, Import, ArrowUpRight, Sun, Moon } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
 import { Button } from "./ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
@@ -86,7 +86,7 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
                 onClick={handleExport} 
                 className="rounded-full w-8 h-8"
               >
-                <Export className="h-4 w-4" />
+                <ArrowUpRight className="h-4 w-4" />
                 <span className="sr-only">Export data</span>
               </Button>
             </TooltipTrigger>
