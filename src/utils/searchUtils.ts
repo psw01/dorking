@@ -23,7 +23,16 @@ export type SearchHistoryItem = {
   excludeDomains: string[];
   status: SearchStatus;
   tags: string[];
+  notes?: string; // Added notes field
 };
+
+export interface EngineConfiguration {
+  includeSyntax: string;
+  excludeSyntax: string;
+  fileSyntax: string;
+  supportsExcludeDomains: boolean;
+  supportsFiletype: boolean;
+}
 
 export const SEARCH_ENGINES: SearchEngine[] = [
   {
@@ -77,6 +86,73 @@ export const DEFAULT_TAGS: Tag[] = [
   { id: 'work', name: 'Work', color: 'bg-cyber-success' }
 ];
 
+// Default engine configurations
+const DEFAULT_ENGINE_CONFIGS: Record<string, EngineConfiguration> = {
+  google: {
+    includeSyntax: 'site:$domain',
+    excludeSyntax: '-site:$domain',
+    fileSyntax: 'filetype:$type',
+    supportsExcludeDomains: true,
+    supportsFiletype: true
+  },
+  duckduckgo: {
+    includeSyntax: 'site:$domain',
+    excludeSyntax: '-site:$domain',
+    fileSyntax: 'filetype:$type',
+    supportsExcludeDomains: true,
+    supportsFiletype: true
+  },
+  bing: {
+    includeSyntax: 'site:$domain',
+    excludeSyntax: '-site:$domain',
+    fileSyntax: 'filetype:$type',
+    supportsExcludeDomains: true,
+    supportsFiletype: true
+  },
+  yandex: {
+    includeSyntax: 'site:$domain',
+    excludeSyntax: '',
+    fileSyntax: 'mime:$type',
+    supportsExcludeDomains: false,
+    supportsFiletype: true
+  },
+  baidu: {
+    includeSyntax: 'site:$domain',
+    excludeSyntax: '',
+    fileSyntax: 'filetype:$type',
+    supportsExcludeDomains: false,
+    supportsFiletype: true
+  },
+  startpage: {
+    includeSyntax: 'site:$domain',
+    excludeSyntax: '-site:$domain',
+    fileSyntax: 'filetype:$type',
+    supportsExcludeDomains: true,
+    supportsFiletype: true
+  },
+  github: {
+    includeSyntax: 'repo:$domain',
+    excludeSyntax: '-repo:$domain',
+    fileSyntax: 'language:$type',
+    supportsExcludeDomains: true,
+    supportsFiletype: true
+  }
+};
+
+export const getEngineConfigurations = (): Record<string, EngineConfiguration> => {
+  try {
+    const configs = localStorage.getItem('dork_engine_configs');
+    return configs ? JSON.parse(configs) : DEFAULT_ENGINE_CONFIGS;
+  } catch (error) {
+    console.error('Error loading engine configurations:', error);
+    return DEFAULT_ENGINE_CONFIGS;
+  }
+};
+
+export const saveEngineConfigurations = (configs: Record<string, EngineConfiguration>): void => {
+  localStorage.setItem('dork_engine_configs', JSON.stringify(configs));
+};
+
 export const buildSearchUrl = (
   engine: SearchEngine,
   query: string,
@@ -84,15 +160,25 @@ export const buildSearchUrl = (
   excludeDomains: string[]
 ): string => {
   let searchQuery = query.trim();
+  const configs = getEngineConfigurations();
+  const engineConfig = configs[engine.id] || DEFAULT_ENGINE_CONFIGS[engine.id];
 
   // Add domain scoping
-  if (includeDomains.length > 0) {
-    searchQuery += ' ' + includeDomains.map(domain => `site:${domain}`).join(' OR ');
+  if (includeDomains.length > 0 && engineConfig.includeSyntax) {
+    const includeTerms = includeDomains
+      .filter(domain => domain.trim() !== '')
+      .map(domain => engineConfig.includeSyntax.replace('$domain', domain));
+    
+    searchQuery += ' ' + includeTerms.join(' OR ');
   }
 
-  // Add domain exclusion
-  if (excludeDomains.length > 0) {
-    searchQuery += ' ' + excludeDomains.map(domain => `-site:${domain}`).join(' ');
+  // Add domain exclusion if supported
+  if (excludeDomains.length > 0 && engineConfig.supportsExcludeDomains && engineConfig.excludeSyntax) {
+    const excludeTerms = excludeDomains
+      .filter(domain => domain.trim() !== '')
+      .map(domain => engineConfig.excludeSyntax.replace('$domain', domain));
+    
+    searchQuery += ' ' + excludeTerms.join(' ');
   }
 
   return engine.url + encodeURIComponent(searchQuery);
@@ -121,6 +207,14 @@ export const updateSearchTags = (id: string, tags: string[]): void => {
   const history = getSearchHistory();
   const updatedHistory = history.map(item => 
     item.id === id ? { ...item, tags } : item
+  );
+  localStorage.setItem('dork_search_history', JSON.stringify(updatedHistory));
+};
+
+export const updateSearchNotes = (id: string, notes: string): void => {
+  const history = getSearchHistory();
+  const updatedHistory = history.map(item => 
+    item.id === id ? { ...item, notes } : item
   );
   localStorage.setItem('dork_search_history', JSON.stringify(updatedHistory));
 };
@@ -158,4 +252,50 @@ export const deleteTag = (id: string): void => {
 export const generateId = (): string => {
   return Math.random().toString(36).substring(2, 15) + 
          Math.random().toString(36).substring(2, 15);
+};
+
+// Export and Import functionality
+export const exportAppData = (): string => {
+  const data = {
+    version: '1.0',
+    timestamp: Date.now(),
+    searchHistory: getSearchHistory(),
+    tags: getTags(),
+    engineConfigs: getEngineConfigurations()
+  };
+  
+  return JSON.stringify(data, null, 2);
+};
+
+export const importAppData = (jsonData: string): boolean => {
+  try {
+    const data = JSON.parse(jsonData);
+    
+    // Validate imported data
+    if (!data.searchHistory || !data.tags) {
+      return false;
+    }
+    
+    localStorage.setItem('dork_search_history', JSON.stringify(data.searchHistory));
+    localStorage.setItem('dork_search_tags', JSON.stringify(data.tags));
+    
+    if (data.engineConfigs) {
+      localStorage.setItem('dork_engine_configs', JSON.stringify(data.engineConfigs));
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error importing data:', error);
+    return false;
+  }
+};
+
+// Load search into form
+export const getSearchAsFormState = (item: SearchHistoryItem) => {
+  return {
+    query: item.query,
+    engines: item.engines,
+    includeDomains: item.includeDomains.length > 0 ? item.includeDomains : [''],
+    excludeDomains: item.excludeDomains.length > 0 ? item.excludeDomains : [''],
+  };
 };

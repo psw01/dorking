@@ -1,7 +1,14 @@
 
-import React from 'react';
-import { Database, Tag, History, Search } from "lucide-react";
+import React, { useState } from 'react';
+import { Database, Tag, History, Search, Settings, Import, Export, Sun, Moon } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
+import { Button } from "./ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
+import SettingsDialog from './SettingsDialog';
+import ImportDialog from './ImportDialog';
+import ThemeSwitcher from './ThemeSwitcher';
+import { exportAppData } from '@/utils/searchUtils';
+import { useToast } from '@/hooks/use-toast';
 
 interface HeaderProps {
   activeTab: string;
@@ -9,9 +16,42 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const { toast } = useToast();
+
+  const handleExport = () => {
+    const data = exportAppData();
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    
+    a.href = url;
+    a.download = `dorkmaster-export-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    
+    // Clean up
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 100);
+    
+    toast({
+      title: "Export successful",
+      description: "Your data has been exported to a file."
+    });
+  };
+
+  const handleImportSuccess = () => {
+    // Trigger storage-updated event to refresh data in components
+    window.dispatchEvent(new Event('storage-updated'));
+  };
+
   return (
     <div className="flex flex-col space-y-2 mb-8">
-      <div className="flex items-center justify-center">
+      <div className="flex items-center justify-between">
+        <div className="flex-1"></div>
         <div className="relative">
           <div className="absolute inset-0 blur-xl bg-gradient-to-r from-cyber-teal via-cyber-blue to-cyber-purple opacity-30"></div>
           <h1 className="relative text-4xl font-bold font-mono text-center">
@@ -20,7 +60,56 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
             </span>
           </h1>
         </div>
+        <div className="flex-1 flex justify-end items-center space-x-1">
+          <ThemeSwitcher />
+          
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setImportOpen(true)} 
+                className="rounded-full w-8 h-8"
+              >
+                <Import className="h-4 w-4" />
+                <span className="sr-only">Import data</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Import data</TooltipContent>
+          </Tooltip>
+          
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={handleExport} 
+                className="rounded-full w-8 h-8"
+              >
+                <Export className="h-4 w-4" />
+                <span className="sr-only">Export data</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Export data</TooltipContent>
+          </Tooltip>
+          
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setSettingsOpen(true)} 
+                className="rounded-full w-8 h-8"
+              >
+                <Settings className="h-4 w-4" />
+                <span className="sr-only">Settings</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Settings</TooltipContent>
+          </Tooltip>
+        </div>
       </div>
+      
       <p className="text-center text-muted-foreground mb-6">
         Advanced Search Engine Dork Generator & History Management
       </p>
@@ -45,6 +134,14 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
           </TabsTrigger>
         </TabsList>
       </Tabs>
+      
+      {/* Dialogs */}
+      <SettingsDialog isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <ImportDialog 
+        isOpen={importOpen} 
+        onClose={() => setImportOpen(false)} 
+        onSuccess={handleImportSuccess}
+      />
     </div>
   );
 };

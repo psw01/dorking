@@ -20,18 +20,27 @@ import {
   Trash2, 
   Tag,
   ExternalLink,
+  FileText,
+  Edit,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from './ui/separator';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
 import TagsDialog from './TagsDialog';
+import NotesDialog from './NotesDialog';
 import { formatDistanceToNow } from 'date-fns';
 
-const SearchHistory: React.FC = () => {
+interface SearchHistoryProps {
+  onLoadSearch?: (search: HistoryItemType) => void;
+}
+
+const SearchHistory: React.FC<SearchHistoryProps> = ({ onLoadSearch }) => {
   const [historyItems, setHistoryItems] = useState<HistoryItemType[]>([]);
   const [isTagsDialogOpen, setIsTagsDialogOpen] = useState(false);
+  const [isNotesDialogOpen, setIsNotesDialogOpen] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [selectedItemTags, setSelectedItemTags] = useState<string[]>([]);
+  const [selectedItemNotes, setSelectedItemNotes] = useState<string>('');
   const { toast } = useToast();
   const allTags = getTags();
 
@@ -108,6 +117,12 @@ const SearchHistory: React.FC = () => {
     setIsTagsDialogOpen(true);
   };
 
+  const openNotesDialog = (item: HistoryItemType) => {
+    setSelectedItemId(item.id);
+    setSelectedItemNotes(item.notes || '');
+    setIsNotesDialogOpen(true);
+  };
+
   const handleTagsUpdate = (tags: string[]) => {
     if (selectedItemId) {
       updateSearchTags(selectedItemId, tags);
@@ -126,6 +141,17 @@ const SearchHistory: React.FC = () => {
       });
     }
     setIsTagsDialogOpen(false);
+  };
+
+  const handleLoadSearch = (item: HistoryItemType) => {
+    if (onLoadSearch) {
+      onLoadSearch(item);
+      
+      toast({
+        title: "Search Loaded",
+        description: "Search has been loaded to the form",
+      });
+    }
   };
 
   if (historyItems.length === 0) {
@@ -167,10 +193,29 @@ const SearchHistory: React.FC = () => {
                       <Search className="h-3 w-3 mr-1" />
                       {item.engines.length} {item.engines.length === 1 ? 'engine' : 'engines'}
                     </span>
+                    
+                    {item.notes && (
+                      <span className="ml-3 flex items-center">
+                        <FileText className="h-3 w-3 mr-1 text-cyber-teal" />
+                        Has notes
+                      </span>
+                    )}
                   </div>
                 </div>
                 
                 <div className="flex items-center space-x-1 mt-2 sm:mt-0">
+                  {onLoadSearch && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleLoadSearch(item)}
+                      className="text-cyber-blue border-cyber-blue/30 h-8"
+                    >
+                      <Edit className="h-4 w-4 mr-1" />
+                      Edit
+                    </Button>
+                  )}
+                  
                   <Button
                     variant="outline"
                     size="sm"
@@ -205,6 +250,15 @@ const SearchHistory: React.FC = () => {
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
+                  
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => openNotesDialog(item)}
+                    className="h-8 w-8"
+                  >
+                    <FileText className="h-4 w-4" />
+                  </Button>
                   
                   <Button
                     variant="ghost"
@@ -270,6 +324,19 @@ const SearchHistory: React.FC = () => {
                   </div>
                 </div>
               )}
+              
+              {/* Show notes preview if exists */}
+              {item.notes && (
+                <div className="px-4 pb-3">
+                  <Separator className="my-2" />
+                  <div className="text-xs">
+                    <span className="text-muted-foreground">Notes:</span>
+                    <p className="font-mono mt-1 whitespace-pre-wrap line-clamp-2">
+                      {item.notes}
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           </Card>
         ))}
@@ -280,6 +347,13 @@ const SearchHistory: React.FC = () => {
         onClose={() => setIsTagsDialogOpen(false)}
         selectedTags={selectedItemTags}
         onSave={handleTagsUpdate}
+      />
+      
+      <NotesDialog
+        isOpen={isNotesDialogOpen}
+        onClose={() => setIsNotesDialogOpen(false)}
+        searchId={selectedItemId || ''}
+        initialNotes={selectedItemNotes}
       />
     </div>
   );

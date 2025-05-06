@@ -1,25 +1,23 @@
+import type { Config } from "tailwindcss"
 
-import type { Config } from "tailwindcss";
-
-export default {
-  darkMode: ["class"],
+import { fontFamily } from "tailwindcss/defaultTheme"
+const config: Config = {
+  darkMode: "class",
   content: [
-    "./pages/**/*.{ts,tsx}",
-    "./components/**/*.{ts,tsx}",
-    "./app/**/*.{ts,tsx}",
-    "./src/**/*.{ts,tsx}",
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
   ],
-  prefix: "",
   theme: {
-    container: {
-      center: true,
-      padding: "2rem",
-      screens: {
-        "2xl": "1400px",
-      },
-    },
     extend: {
       colors: {
+        "cyber-dark": "hsl(var(--background))",
+        "cyber-teal": "hsl(var(--primary))",
+        "cyber-teal-light": "hsl(196, 85%, 60%)",
+        "cyber-blue": "#3B82F6",
+        "cyber-purple": "#8B5CF6", 
+        "cyber-success": "#10B981",
+        "cyber-warning": "#F59E0B",
+        "cyber-error": "#EF4444",
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -53,27 +51,6 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        sidebar: {
-          DEFAULT: "hsl(var(--sidebar-background))",
-          foreground: "hsl(var(--sidebar-foreground))",
-          primary: "hsl(var(--sidebar-primary))",
-          "primary-foreground": "hsl(var(--sidebar-primary-foreground))",
-          accent: "hsl(var(--sidebar-accent))",
-          "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
-          border: "hsl(var(--sidebar-border))",
-          ring: "hsl(var(--sidebar-ring))",
-        },
-        cyber: {
-          "dark": "#0F172A",
-          "dark-accent": "#1E293B",
-          "teal": "#0EA5E9",
-          "teal-light": "#38BDF8",
-          "blue": "#3B82F6",
-          "purple": "#8B5CF6",
-          "success": "#22C55E",
-          "warning": "#F59E0B",
-          "danger": "#EF4444",
-        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -82,20 +59,12 @@ export default {
       },
       keyframes: {
         "accordion-down": {
-          from: { height: "0" },
+          from: { height: 0 },
           to: { height: "var(--radix-accordion-content-height)" },
         },
         "accordion-up": {
           from: { height: "var(--radix-accordion-content-height)" },
-          to: { height: "0" },
-        },
-        "glow": {
-          "0%, 100%": { 
-            boxShadow: "0 0 10px rgba(14, 165, 233, 0.6), 0 0 20px rgba(14, 165, 233, 0.4)"
-          },
-          "50%": { 
-            boxShadow: "0 0 20px rgba(14, 165, 233, 0.8), 0 0 30px rgba(14, 165, 233, 0.6)"
-          },
+          to: { height: 0 },
         },
         "pulse-subtle": {
           "0%, 100%": { opacity: 1 },
@@ -105,13 +74,15 @@ export default {
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "glow": "glow 2s ease-in-out infinite",
-        "pulse-subtle": "pulse-subtle 2s ease-in-out infinite",
+        "pulse-subtle": "pulse-subtle 4s cubic-bezier(0.4, 0, 0.6, 1) infinite",
       },
-      fontFamily: {
-        mono: ["Consolas", "Monaco", "Courier New", "monospace"],
+      backgroundImage: {
+        "cyber-gradient": "linear-gradient(to right, #0ea5e9, #3b82f6, #8b5cf6)",
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
-} satisfies Config;
+  plugins: [
+    require("tailwindcss-animate"),
+  ],
+}
+export default config

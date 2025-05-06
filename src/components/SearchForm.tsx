@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Checkbox } from './ui/checkbox';
@@ -13,16 +13,37 @@ import {
   saveSearchHistory, 
   generateId,
   SearchEngine,
-  SearchHistoryItem
+  SearchHistoryItem,
+  getSearchAsFormState
 } from '@/utils/searchUtils';
 import { useToast } from '@/hooks/use-toast';
 
-const SearchForm: React.FC = () => {
+interface SearchFormProps {
+  preloadedSearch?: SearchHistoryItem;
+}
+
+const SearchForm: React.FC<SearchFormProps> = ({ preloadedSearch }) => {
   const [query, setQuery] = useState<string>('');
   const [selectedEngines, setSelectedEngines] = useState<string[]>(['google']);
   const [includeDomains, setIncludeDomains] = useState<string[]>(['']);
   const [excludeDomains, setExcludeDomains] = useState<string[]>(['']);
   const { toast } = useToast();
+
+  // Effect to load preloaded search if provided
+  useEffect(() => {
+    if (preloadedSearch) {
+      const formState = getSearchAsFormState(preloadedSearch);
+      setQuery(formState.query);
+      setSelectedEngines(formState.engines);
+      setIncludeDomains(formState.includeDomains);
+      setExcludeDomains(formState.excludeDomains);
+      
+      toast({
+        title: "Search loaded",
+        description: "Search query has been loaded from history."
+      });
+    }
+  }, [preloadedSearch]);
 
   const handleAddDomainField = (type: 'include' | 'exclude') => {
     if (type === 'include') {
@@ -105,7 +126,8 @@ const SearchForm: React.FC = () => {
       excludeDomains: filteredExcludeDomains,
       timestamp: Date.now(),
       status: 'pending',
-      tags: []
+      tags: [],
+      notes: ''
     };
     
     saveSearchHistory(historyItem);
