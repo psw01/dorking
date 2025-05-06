@@ -56,7 +56,7 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
           <div className="absolute inset-0 blur-xl bg-gradient-to-r from-cyber-teal via-cyber-blue to-cyber-purple opacity-30"></div>
           <h1 className="relative text-4xl font-bold font-mono text-center">
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyber-teal via-cyber-blue to-cyber-purple animate-pulse-subtle">
-              DorkMaster
+              Dorking
             </span>
           </h1>
         </div>

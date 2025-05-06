@@ -281,7 +281,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose }) => {
         <DialogHeader>
           <DialogTitle className="flex items-center text-xl">
             <Settings className="mr-2 h-5 w-5" />
-            DorkMaster Settings
+            Dorking Settings
           </DialogTitle>
         </DialogHeader>
 
@@ -394,8 +394,8 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose }) => {
           
           <TabsContent value="about" className="p-4">
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold">About DorkMaster</h3>
-              <p>DorkMaster is an advanced search dork generator that helps you create powerful search queries for various search engines.</p>
+              <h3 className="text-lg font-semibold">About Dorking</h3>
+              <p>Dorking is an advanced search dork generator that helps you create powerful search queries for various search engines.</p>
               <p className="text-sm text-muted-foreground">Version 1.2.0</p>
               
               <div className="pt-4">

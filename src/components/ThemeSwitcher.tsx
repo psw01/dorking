@@ -5,7 +5,7 @@ import { Button } from './ui/button';
 import { useToast } from '@/hooks/use-toast';
 
 const ThemeSwitcher: React.FC = () => {
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [theme, setTheme] = useState<'dark' | 'light'>('light');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -13,7 +13,7 @@ const ThemeSwitcher: React.FC = () => {
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     
     // Check saved theme or use system preference as default
-    const savedTheme = localStorage.getItem('dork-theme') as 'dark' | 'light' | null;
+    const savedTheme = localStorage.getItem('dorking-theme') as 'dark' | 'light' | null;
     const initialTheme = savedTheme || (prefersDark ? 'dark' : 'light');
     
     setTheme(initialTheme);
@@ -21,17 +21,31 @@ const ThemeSwitcher: React.FC = () => {
   }, []);
 
   const applyTheme = (newTheme: 'dark' | 'light') => {
+    const root = document.documentElement;
+    
     if (newTheme === 'dark') {
-      document.documentElement.classList.add('dark');
+      root.classList.add('dark');
     } else {
-      document.documentElement.classList.remove('dark');
+      root.classList.remove('dark');
+    }
+    
+    // Force a repaint to make sure the theme is applied immediately
+    document.body.style.transition = 'background-color 0.3s ease';
+    
+    // Update theme-related colors
+    if (newTheme === 'dark') {
+      document.body.style.backgroundColor = 'hsl(var(--background))';
+      document.body.style.color = 'hsl(var(--foreground))';
+    } else {
+      document.body.style.backgroundColor = 'white';
+      document.body.style.color = 'black';
     }
   };
 
   const toggleTheme = () => {
     const newTheme = theme === 'dark' ? 'light' : 'dark';
     setTheme(newTheme);
-    localStorage.setItem('dork-theme', newTheme);
+    localStorage.setItem('dorking-theme', newTheme);
     applyTheme(newTheme);
     
     toast({

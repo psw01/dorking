@@ -1,4 +1,3 @@
-
 export type SearchEngine = {
   id: string;
   name: string;
@@ -143,7 +142,7 @@ const DEFAULT_ENGINE_CONFIGS: Record<string, EngineConfiguration> = {
 // Get custom search engines
 export const getCustomSearchEngines = (): SearchEngine[] => {
   try {
-    const customEngines = localStorage.getItem('dork_custom_engines');
+    const customEngines = localStorage.getItem('dorking_custom_engines');
     return customEngines ? JSON.parse(customEngines) : [];
   } catch (error) {
     console.error('Error loading custom search engines:', error);
@@ -155,14 +154,14 @@ export const getCustomSearchEngines = (): SearchEngine[] => {
 export const addSearchEngine = (engine: SearchEngine): void => {
   const customEngines = getCustomSearchEngines();
   customEngines.push(engine);
-  localStorage.setItem('dork_custom_engines', JSON.stringify(customEngines));
+  localStorage.setItem('dorking_custom_engines', JSON.stringify(customEngines));
 };
 
 // Remove a custom search engine
 export const removeSearchEngine = (engineId: string): void => {
   const customEngines = getCustomSearchEngines();
   const updatedEngines = customEngines.filter(engine => engine.id !== engineId);
-  localStorage.setItem('dork_custom_engines', JSON.stringify(updatedEngines));
+  localStorage.setItem('dorking_custom_engines', JSON.stringify(updatedEngines));
 };
 
 // Get all search engines (default + custom)
@@ -173,7 +172,7 @@ export const getAllSearchEngines = (): SearchEngine[] => {
 
 export const getEngineConfigurations = (): Record<string, EngineConfiguration> => {
   try {
-    const configs = localStorage.getItem('dork_engine_configs');
+    const configs = localStorage.getItem('dorking_engine_configs');
     return configs ? JSON.parse(configs) : DEFAULT_ENGINE_CONFIGS;
   } catch (error) {
     console.error('Error loading engine configurations:', error);
@@ -182,7 +181,7 @@ export const getEngineConfigurations = (): Record<string, EngineConfiguration> =
 };
 
 export const saveEngineConfigurations = (configs: Record<string, EngineConfiguration>): void => {
-  localStorage.setItem('dork_engine_configs', JSON.stringify(configs));
+  localStorage.setItem('dorking_engine_configs', JSON.stringify(configs));
 };
 
 export const buildSearchUrl = (
@@ -219,11 +218,11 @@ export const buildSearchUrl = (
 export const saveSearchHistory = (item: SearchHistoryItem): void => {
   const history = getSearchHistory();
   history.unshift(item);
-  localStorage.setItem('dork_search_history', JSON.stringify(history));
+  localStorage.setItem('dorking_search_history', JSON.stringify(history));
 };
 
 export const getSearchHistory = (): SearchHistoryItem[] => {
-  const history = localStorage.getItem('dork_search_history');
+  const history = localStorage.getItem('dorking_search_history');
   return history ? JSON.parse(history) : [];
 };
 
@@ -232,7 +231,7 @@ export const updateSearchStatus = (id: string, status: SearchStatus): void => {
   const updatedHistory = history.map(item => 
     item.id === id ? { ...item, status } : item
   );
-  localStorage.setItem('dork_search_history', JSON.stringify(updatedHistory));
+  localStorage.setItem('dorking_search_history', JSON.stringify(updatedHistory));
 };
 
 export const updateSearchTags = (id: string, tags: string[]): void => {
@@ -240,7 +239,7 @@ export const updateSearchTags = (id: string, tags: string[]): void => {
   const updatedHistory = history.map(item => 
     item.id === id ? { ...item, tags } : item
   );
-  localStorage.setItem('dork_search_history', JSON.stringify(updatedHistory));
+  localStorage.setItem('dorking_search_history', JSON.stringify(updatedHistory));
 };
 
 export const updateSearchNotes = (id: string, notes: string): void => {
@@ -248,7 +247,7 @@ export const updateSearchNotes = (id: string, notes: string): void => {
   const updatedHistory = history.map(item => 
     item.id === id ? { ...item, notes } : item
   );
-  localStorage.setItem('dork_search_history', JSON.stringify(updatedHistory));
+  localStorage.setItem('dorking_search_history', JSON.stringify(updatedHistory));
 };
 
 export const toggleBookmark = (id: string): void => {
@@ -256,17 +255,17 @@ export const toggleBookmark = (id: string): void => {
   const updatedHistory = history.map(item => 
     item.id === id ? { ...item, bookmarked: !item.bookmarked } : item
   );
-  localStorage.setItem('dork_search_history', JSON.stringify(updatedHistory));
+  localStorage.setItem('dorking_search_history', JSON.stringify(updatedHistory));
 };
 
 export const deleteSearchItem = (id: string): void => {
   const history = getSearchHistory();
   const updatedHistory = history.filter(item => item.id !== id);
-  localStorage.setItem('dork_search_history', JSON.stringify(updatedHistory));
+  localStorage.setItem('dorking_search_history', JSON.stringify(updatedHistory));
 };
 
 export const getTags = (): Tag[] => {
-  const tags = localStorage.getItem('dork_search_tags');
+  const tags = localStorage.getItem('dorking_search_tags');
   return tags ? JSON.parse(tags) : DEFAULT_TAGS;
 };
 
@@ -280,13 +279,13 @@ export const saveTag = (tag: Tag): void => {
     tags.push(tag);
   }
   
-  localStorage.setItem('dork_search_tags', JSON.stringify(tags));
+  localStorage.setItem('dorking_search_tags', JSON.stringify(tags));
 };
 
 export const deleteTag = (id: string): void => {
   const tags = getTags();
   const updatedTags = tags.filter(tag => tag.id !== id);
-  localStorage.setItem('dork_search_tags', JSON.stringify(updatedTags));
+  localStorage.setItem('dorking_search_tags', JSON.stringify(updatedTags));
 };
 
 export const generateId = (): string => {
@@ -317,15 +316,15 @@ export const importAppData = (jsonData: string): boolean => {
       return false;
     }
     
-    localStorage.setItem('dork_search_history', JSON.stringify(data.searchHistory));
-    localStorage.setItem('dork_search_tags', JSON.stringify(data.tags));
+    localStorage.setItem('dorking_search_history', JSON.stringify(data.searchHistory));
+    localStorage.setItem('dorking_search_tags', JSON.stringify(data.tags));
     
     if (data.engineConfigs) {
-      localStorage.setItem('dork_engine_configs', JSON.stringify(data.engineConfigs));
+      localStorage.setItem('dorking_engine_configs', JSON.stringify(data.engineConfigs));
     }
     
     if (data.customEngines) {
-      localStorage.setItem('dork_custom_engines', JSON.stringify(data.customEngines));
+      localStorage.setItem('dorking_custom_engines', JSON.stringify(data.customEngines));
     }
     
     return true;
