@@ -8,7 +8,7 @@ import { Label } from './ui/label';
 import { Separator } from './ui/separator';
 import { Search, X, Plus } from "lucide-react";
 import { 
-  SEARCH_ENGINES, 
+  getAllSearchEngines,
   buildSearchUrl, 
   saveSearchHistory, 
   generateId,
@@ -27,7 +27,22 @@ const SearchForm: React.FC<SearchFormProps> = ({ preloadedSearch }) => {
   const [selectedEngines, setSelectedEngines] = useState<string[]>(['google']);
   const [includeDomains, setIncludeDomains] = useState<string[]>(['']);
   const [excludeDomains, setExcludeDomains] = useState<string[]>(['']);
+  const [availableEngines, setAvailableEngines] = useState<SearchEngine[]>([]);
   const { toast } = useToast();
+
+  // Effect to load all available search engines
+  useEffect(() => {
+    setAvailableEngines(getAllSearchEngines());
+    
+    const handleStorageChange = () => {
+      setAvailableEngines(getAllSearchEngines());
+    };
+    
+    window.addEventListener('storage-updated', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage-updated', handleStorageChange);
+    };
+  }, []);
 
   // Effect to load preloaded search if provided
   useEffect(() => {
@@ -127,14 +142,16 @@ const SearchForm: React.FC<SearchFormProps> = ({ preloadedSearch }) => {
       timestamp: Date.now(),
       status: 'pending',
       tags: [],
-      notes: ''
+      notes: '',
+      bookmarked: false
     };
     
     saveSearchHistory(historyItem);
 
     // Open search tabs
+    const allEngines = getAllSearchEngines();
     selectedEngines.forEach(engineId => {
-      const engine = SEARCH_ENGINES.find(e => e.id === engineId);
+      const engine = allEngines.find(e => e.id === engineId);
       if (engine) {
         const searchUrl = buildSearchUrl(
           engine, 
@@ -174,7 +191,7 @@ const SearchForm: React.FC<SearchFormProps> = ({ preloadedSearch }) => {
         <div className="space-y-2">
           <Label className="text-lg font-mono mb-2 block">Search Engines</Label>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-            {SEARCH_ENGINES.map((engine) => (
+            {availableEngines.map((engine) => (
               <div key={engine.id} className="flex items-center space-x-2">
                 <Checkbox
                   id={`engine-${engine.id}`}

@@ -23,7 +23,8 @@ export type SearchHistoryItem = {
   excludeDomains: string[];
   status: SearchStatus;
   tags: string[];
-  notes?: string; // Added notes field
+  notes?: string;
+  bookmarked?: boolean; // Added for bookmark feature
 };
 
 export interface EngineConfiguration {
@@ -139,6 +140,37 @@ const DEFAULT_ENGINE_CONFIGS: Record<string, EngineConfiguration> = {
   }
 };
 
+// Get custom search engines
+export const getCustomSearchEngines = (): SearchEngine[] => {
+  try {
+    const customEngines = localStorage.getItem('dork_custom_engines');
+    return customEngines ? JSON.parse(customEngines) : [];
+  } catch (error) {
+    console.error('Error loading custom search engines:', error);
+    return [];
+  }
+};
+
+// Add a custom search engine
+export const addSearchEngine = (engine: SearchEngine): void => {
+  const customEngines = getCustomSearchEngines();
+  customEngines.push(engine);
+  localStorage.setItem('dork_custom_engines', JSON.stringify(customEngines));
+};
+
+// Remove a custom search engine
+export const removeSearchEngine = (engineId: string): void => {
+  const customEngines = getCustomSearchEngines();
+  const updatedEngines = customEngines.filter(engine => engine.id !== engineId);
+  localStorage.setItem('dork_custom_engines', JSON.stringify(updatedEngines));
+};
+
+// Get all search engines (default + custom)
+export const getAllSearchEngines = (): SearchEngine[] => {
+  const customEngines = getCustomSearchEngines();
+  return [...SEARCH_ENGINES, ...customEngines];
+};
+
 export const getEngineConfigurations = (): Record<string, EngineConfiguration> => {
   try {
     const configs = localStorage.getItem('dork_engine_configs');
@@ -219,6 +251,14 @@ export const updateSearchNotes = (id: string, notes: string): void => {
   localStorage.setItem('dork_search_history', JSON.stringify(updatedHistory));
 };
 
+export const toggleBookmark = (id: string): void => {
+  const history = getSearchHistory();
+  const updatedHistory = history.map(item => 
+    item.id === id ? { ...item, bookmarked: !item.bookmarked } : item
+  );
+  localStorage.setItem('dork_search_history', JSON.stringify(updatedHistory));
+};
+
 export const deleteSearchItem = (id: string): void => {
   const history = getSearchHistory();
   const updatedHistory = history.filter(item => item.id !== id);
@@ -261,7 +301,8 @@ export const exportAppData = (): string => {
     timestamp: Date.now(),
     searchHistory: getSearchHistory(),
     tags: getTags(),
-    engineConfigs: getEngineConfigurations()
+    engineConfigs: getEngineConfigurations(),
+    customEngines: getCustomSearchEngines()
   };
   
   return JSON.stringify(data, null, 2);
@@ -281,6 +322,10 @@ export const importAppData = (jsonData: string): boolean => {
     
     if (data.engineConfigs) {
       localStorage.setItem('dork_engine_configs', JSON.stringify(data.engineConfigs));
+    }
+    
+    if (data.customEngines) {
+      localStorage.setItem('dork_custom_engines', JSON.stringify(data.customEngines));
     }
     
     return true;

@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { Database, Tag, History, Search, Settings, Import, ArrowUpRight, Sun, Moon } from "lucide-react";
+import React, { useState, useEffect } from 'react';
+import { Database, Tag, History, Search, Settings, Import, ArrowUpRight, Sun, Moon, Star } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
 import { Button } from "./ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
