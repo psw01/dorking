@@ -2,11 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
-import { Checkbox } from './ui/checkbox';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Separator } from './ui/separator';
 import { Search, X, Plus } from "lucide-react";
+import { Toggle } from "./ui/toggle";
 import { 
   getAllSearchEngines,
   buildSearchUrl, 
@@ -24,7 +24,7 @@ interface SearchFormProps {
 
 const SearchForm: React.FC<SearchFormProps> = ({ preloadedSearch }) => {
   const [query, setQuery] = useState<string>('');
-  const [selectedEngines, setSelectedEngines] = useState<string[]>(['google']);
+  const [selectedEngines, setSelectedEngines] = useState<string[]>(['google', 'yandex']);
   const [includeDomains, setIncludeDomains] = useState<string[]>(['']);
   const [excludeDomains, setExcludeDomains] = useState<string[]>(['']);
   const [availableEngines, setAvailableEngines] = useState<SearchEngine[]>([]);
@@ -96,7 +96,7 @@ const SearchForm: React.FC<SearchFormProps> = ({ preloadedSearch }) => {
     }
   };
 
-  const handleEngineChange = (engineId: string) => {
+  const handleEngineToggle = (engineId: string) => {
     setSelectedEngines(prev => {
       if (prev.includes(engineId)) {
         return prev.filter(id => id !== engineId);
@@ -190,23 +190,17 @@ const SearchForm: React.FC<SearchFormProps> = ({ preloadedSearch }) => {
 
         <div className="space-y-2">
           <Label className="text-lg font-mono mb-2 block">Search Engines</Label>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          <div className="flex flex-wrap gap-2">
             {availableEngines.map((engine) => (
-              <div key={engine.id} className="flex items-center space-x-2">
-                <Checkbox
-                  id={`engine-${engine.id}`}
-                  checked={selectedEngines.includes(engine.id)}
-                  onCheckedChange={() => handleEngineChange(engine.id)}
-                  className="cyber-checkbox"
-                />
-                <Label
-                  htmlFor={`engine-${engine.id}`}
-                  className="text-sm cursor-pointer"
-                >
-                  <span className="engine-icon">{engine.icon}</span>
-                  {engine.name}
-                </Label>
-              </div>
+              <Toggle
+                key={engine.id}
+                pressed={selectedEngines.includes(engine.id)}
+                onPressedChange={() => handleEngineToggle(engine.id)}
+                className="data-[state=on]:bg-cyber-teal data-[state=on]:text-white border border-input px-3 py-1"
+              >
+                <span className="mr-1">{engine.icon}</span>
+                {engine.name}
+              </Toggle>
             ))}
           </div>
         </div>
