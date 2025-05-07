@@ -4,6 +4,7 @@ import { Button } from './ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog';
 import { Label } from './ui/label';
 import { Input } from './ui/input';
+import { Textarea } from './ui/textarea';
 import { Switch } from './ui/switch';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs';
 import { ScrollArea } from './ui/scroll-area';
@@ -180,16 +181,10 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose }) => {
   }, [isOpen]);
 
   const handleEngineConfigChange = (engineId: string, config: EngineConfiguration) => {
-    const updatedConfigs = {
-      ...configurations,
+    setConfigurations(prev => ({
+      ...prev,
       [engineId]: config
-    };
-    
-    setConfigurations(updatedConfigs);
-    
-    // Apply changes immediately
-    saveEngineConfigurations(updatedConfigs);
-    window.dispatchEvent(new Event('storage-updated'));
+    }));
   };
 
   const handleSave = () => {
@@ -241,12 +236,10 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose }) => {
     addSearchEngine(engineToAdd);
     
     // Add default configuration
-    const updatedConfigs = {
-      ...configurations,
+    setConfigurations(prev => ({
+      ...prev,
       [engineToAdd.id]: { ...defaultEngineConfig }
-    };
-    setConfigurations(updatedConfigs);
-    saveEngineConfigurations(updatedConfigs);
+    }));
     
     // Update local state
     setCustomEngines([...customEngines, engineToAdd]);
@@ -258,9 +251,6 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose }) => {
       url: '',
       icon: '🔍'
     });
-    
-    // Update UI immediately
-    window.dispatchEvent(new Event('storage-updated'));
     
     toast({
       title: "Search Engine Added",
@@ -278,10 +268,6 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose }) => {
     const updatedConfigs = { ...configurations };
     delete updatedConfigs[engineId];
     setConfigurations(updatedConfigs);
-    saveEngineConfigurations(updatedConfigs);
-    
-    // Update UI immediately
-    window.dispatchEvent(new Event('storage-updated'));
     
     toast({
       title: "Search Engine Removed",

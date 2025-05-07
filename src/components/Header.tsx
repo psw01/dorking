@@ -1,11 +1,12 @@
 
-import React, { useState } from 'react';
-import { Tag, History, Search, Settings, Import, ArrowUpRight } from "lucide-react";
+import React, { useState, useEffect } from 'react';
+import { Database, Tag, History, Search, Settings, Import, ArrowUpRight, Sun, Moon, Star } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
 import { Button } from "./ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import SettingsDialog from './SettingsDialog';
 import ImportDialog from './ImportDialog';
+import ThemeSwitcher from './ThemeSwitcher';
 import { exportAppData } from '@/utils/searchUtils';
 import { useToast } from '@/hooks/use-toast';
 
@@ -26,7 +27,7 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
     const a = document.createElement('a');
     
     a.href = url;
-    a.download = `dorking-export-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `dorkmaster-export-${new Date().toISOString().split('T')[0]}.json`;
     document.body.appendChild(a);
     a.click();
     
@@ -60,6 +61,8 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
           </h1>
         </div>
         <div className="flex-1 flex justify-end items-center space-x-1">
+          <ThemeSwitcher />
+          
           <Tooltip>
             <TooltipTrigger asChild>
               <Button 
