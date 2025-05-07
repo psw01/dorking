@@ -79,6 +79,9 @@ export const SEARCH_ENGINES: SearchEngine[] = [
   },
 ];
 
+// Default enabled search engines
+const DEFAULT_ENABLED_ENGINES = ['google', 'yandex'];
+
 export const DEFAULT_TAGS: Tag[] = [
   { id: 'osint', name: 'OSINT', color: 'bg-cyber-teal' },
   { id: 'security', name: 'Security', color: 'bg-cyber-purple' }, 
@@ -162,6 +165,47 @@ export const removeSearchEngine = (engineId: string): void => {
   const customEngines = getCustomSearchEngines();
   const updatedEngines = customEngines.filter(engine => engine.id !== engineId);
   localStorage.setItem('dorking_custom_engines', JSON.stringify(updatedEngines));
+  
+  // Also remove from enabled engines
+  const enabledEngines = getEnabledSearchEngines();
+  if (enabledEngines.includes(engineId)) {
+    toggleSearchEngine(engineId, false);
+  }
+};
+
+// Toggle a search engine on/off
+export const toggleSearchEngine = (engineId: string, enabled: boolean): void => {
+  const enabledEngines = getEnabledSearchEngines();
+  
+  let updatedEnabledEngines: string[];
+  
+  if (enabled && !enabledEngines.includes(engineId)) {
+    updatedEnabledEngines = [...enabledEngines, engineId];
+  } else if (!enabled && enabledEngines.includes(engineId)) {
+    updatedEnabledEngines = enabledEngines.filter(id => id !== engineId);
+  } else {
+    // No change needed
+    return;
+  }
+  
+  localStorage.setItem('dorking_enabled_engines', JSON.stringify(updatedEnabledEngines));
+};
+
+// Get enabled search engines
+export const getEnabledSearchEngines = (): string[] => {
+  try {
+    const enabledEngines = localStorage.getItem('dorking_enabled_engines');
+    if (enabledEngines) {
+      return JSON.parse(enabledEngines);
+    }
+    
+    // If not set yet, initialize with default enabled engines
+    localStorage.setItem('dorking_enabled_engines', JSON.stringify(DEFAULT_ENABLED_ENGINES));
+    return DEFAULT_ENABLED_ENGINES;
+  } catch (error) {
+    console.error('Error loading enabled search engines:', error);
+    return DEFAULT_ENABLED_ENGINES;
+  }
 };
 
 // Get all search engines (default + custom)

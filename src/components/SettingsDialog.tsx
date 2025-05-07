@@ -8,7 +8,7 @@ import { Textarea } from './ui/textarea';
 import { Switch } from './ui/switch';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs';
 import { ScrollArea } from './ui/scroll-area';
-import { Settings, Save, Trash2, Plus } from 'lucide-react';
+import { Settings, Save, Trash2, Plus, ToggleLeft, ToggleRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { 
   SEARCH_ENGINES, 
@@ -17,7 +17,9 @@ import {
   getEngineConfigurations,
   addSearchEngine,
   removeSearchEngine,
-  getCustomSearchEngines
+  getCustomSearchEngines,
+  toggleSearchEngine,
+  getEnabledSearchEngines
 } from '@/utils/searchUtils';
 
 interface EngineConfigurationProps {
@@ -26,6 +28,8 @@ interface EngineConfigurationProps {
   onChange: (engineId: string, config: EngineConfiguration) => void;
   onRemove?: (engineId: string) => void;
   isCustom?: boolean;
+  isEnabled: boolean;
+  onToggle: (engineId: string, enabled: boolean) => void;
 }
 
 export interface EngineConfiguration {
@@ -49,7 +53,9 @@ const EngineConfigurationPanel: React.FC<EngineConfigurationProps> = ({
   configuration, 
   onChange, 
   onRemove,
-  isCustom 
+  isCustom,
+  isEnabled,
+  onToggle
 }) => {
   const handleChange = (key: keyof EngineConfiguration, value: string | boolean) => {
     onChange(engine.id, { 
@@ -66,17 +72,33 @@ const EngineConfigurationPanel: React.FC<EngineConfigurationProps> = ({
           <h3 className="text-lg font-medium">{engine.name}</h3>
         </div>
         
-        {isCustom && onRemove && (
+        <div className="flex items-center space-x-2">
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => onRemove(engine.id)}
-            className="text-muted-foreground hover:text-destructive"
+            onClick={() => onToggle(engine.id, !isEnabled)}
+            className={isEnabled ? "text-cyber-teal" : "text-muted-foreground"}
           >
-            <Trash2 className="h-4 w-4 mr-1" />
-            Remove
+            {isEnabled ? (
+              <ToggleRight className="h-5 w-5 mr-1" />
+            ) : (
+              <ToggleLeft className="h-5 w-5 mr-1" />
+            )}
+            {isEnabled ? "Enabled" : "Disabled"}
           </Button>
-        )}
+        
+          {isCustom && onRemove && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onRemove(engine.id)}
+              className="text-muted-foreground hover:text-destructive"
+            >
+              <Trash2 className="h-4 w-4 mr-1" />
+              Remove
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="space-y-2">
@@ -143,6 +165,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose }) => {
   const [activeTab, setActiveTab] = useState('engines');
   const [configurations, setConfigurations] = useState<Record<string, EngineConfiguration>>({});
   const [customEngines, setCustomEngines] = useState<SearchEngine[]>([]);
+  const [enabledEngines, setEnabledEngines] = useState<string[]>([]);
   const [newEngine, setNewEngine] = useState<SearchEngine>({
     id: '',
     name: '',
@@ -159,6 +182,10 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose }) => {
       // Get custom engines
       const customEngines = getCustomSearchEngines();
       setCustomEngines(customEngines);
+      
+      // Get enabled engines
+      const enabledEngines = getEnabledSearchEngines();
+      setEnabledEngines(enabledEngines);
       
       // Create default configurations for engines that don't have saved configs
       const defaultConfigs: Record<string, EngineConfiguration> = {};
@@ -194,6 +221,26 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose }) => {
       description: "Your search engine configurations have been saved."
     });
     onClose();
+    window.dispatchEvent(new Event('storage-updated'));
+  };
+
+  const handleToggleEngine = (engineId: string, enabled: boolean) => {
+    // Update the enabled state in local storage
+    toggleSearchEngine(engineId, enabled);
+    
+    // Update local state to reflect the changes
+    if (enabled) {
+      setEnabledEngines(prev => [...prev, engineId]);
+    } else {
+      setEnabledEngines(prev => prev.filter(id => id !== engineId));
+    }
+    
+    toast({
+      title: enabled ? "Engine enabled" : "Engine disabled",
+      description: `Search engine ${enabled ? 'enabled' : 'disabled'} successfully.`
+    });
+    
+    // Dispatch an event to update other components
     window.dispatchEvent(new Event('storage-updated'));
   };
 
@@ -242,7 +289,10 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose }) => {
     }));
     
     // Update local state
-    setCustomEngines([...customEngines, engineToAdd]);
+    setCustomEngines(prev => [...prev, engineToAdd]);
+
+    // Enable the new engine by default
+    handleToggleEngine(engineToAdd.id, true);
     
     // Reset form
     setNewEngine({
@@ -269,10 +319,17 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose }) => {
     delete updatedConfigs[engineId];
     setConfigurations(updatedConfigs);
     
+    // Remove from enabled engines too
+    if (enabledEngines.includes(engineId)) {
+      setEnabledEngines(prev => prev.filter(id => id !== engineId));
+    }
+    
     toast({
       title: "Search Engine Removed",
       description: "The search engine has been removed."
     });
+    
+    window.dispatchEvent(new Event('storage-updated'));
   };
 
   return (
@@ -302,6 +359,8 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose }) => {
                     engine={engine}
                     configuration={configurations[engine.id] || defaultEngineConfig}
                     onChange={handleEngineConfigChange}
+                    isEnabled={enabledEngines.includes(engine.id)}
+                    onToggle={handleToggleEngine}
                   />
                 ))}
                 
@@ -316,6 +375,8 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose }) => {
                         onChange={handleEngineConfigChange}
                         onRemove={handleRemoveEngine}
                         isCustom
+                        isEnabled={enabledEngines.includes(engine.id)}
+                        onToggle={handleToggleEngine}
                       />
                     ))}
                   </>
@@ -395,7 +456,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose }) => {
           <TabsContent value="about" className="p-4">
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">About Dorking</h3>
-              <p>Dorking is an advanced search dork generator that helps you create powerful search queries for various search engines.</p>
+              <p>Dorking is an advanced search query builder that helps you create powerful search queries for various search engines.</p>
               <p className="text-sm text-muted-foreground">Version 1.2.0</p>
               
               <div className="pt-4">

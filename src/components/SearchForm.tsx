@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
@@ -14,7 +13,8 @@ import {
   generateId,
   SearchEngine,
   SearchHistoryItem,
-  getSearchAsFormState
+  getSearchAsFormState,
+  getEnabledSearchEngines
 } from '@/utils/searchUtils';
 import { useToast } from '@/hooks/use-toast';
 
@@ -32,10 +32,26 @@ const SearchForm: React.FC<SearchFormProps> = ({ preloadedSearch }) => {
 
   // Effect to load all available search engines
   useEffect(() => {
-    setAvailableEngines(getAllSearchEngines());
+    const loadEngines = () => {
+      // Get all engines
+      const allEngines = getAllSearchEngines();
+      
+      // Get enabled engines
+      const enabledEngineIds = getEnabledSearchEngines();
+      
+      // Filter to only show enabled engines
+      const filteredEngines = allEngines.filter(engine => enabledEngineIds.includes(engine.id));
+      
+      setAvailableEngines(filteredEngines);
+      
+      // Update selected engines to only include enabled ones
+      setSelectedEngines(prev => prev.filter(id => enabledEngineIds.includes(id)));
+    };
+    
+    loadEngines();
     
     const handleStorageChange = () => {
-      setAvailableEngines(getAllSearchEngines());
+      loadEngines();
     };
     
     window.addEventListener('storage-updated', handleStorageChange);
@@ -49,7 +65,12 @@ const SearchForm: React.FC<SearchFormProps> = ({ preloadedSearch }) => {
     if (preloadedSearch) {
       const formState = getSearchAsFormState(preloadedSearch);
       setQuery(formState.query);
-      setSelectedEngines(formState.engines);
+      
+      // Only set selected engines that are currently enabled
+      const enabledEngineIds = getEnabledSearchEngines();
+      const filteredEngines = formState.engines.filter(id => enabledEngineIds.includes(id));
+      setSelectedEngines(filteredEngines);
+      
       setIncludeDomains(formState.includeDomains);
       setExcludeDomains(formState.excludeDomains);
       
@@ -209,6 +230,11 @@ const SearchForm: React.FC<SearchFormProps> = ({ preloadedSearch }) => {
               </div>
             ))}
           </div>
+          {availableEngines.length === 0 && (
+            <p className="text-sm text-muted-foreground italic">
+              No search engines are enabled. Enable search engines in Settings.
+            </p>
+          )}
         </div>
 
         <Separator />
