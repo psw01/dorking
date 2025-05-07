@@ -456,7 +456,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose }) => {
           <TabsContent value="about" className="p-4">
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">About Dorking</h3>
-              <p>Dorking is an advanced search query builder that helps you create powerful search queries for various search engines.</p>
+              <p>Dorking is a 99% vibe coded advanced search query builder that helps you create powerful search queries for various search engines.</p>
               <p className="text-sm text-muted-foreground">Version 1.2.0</p>
               
               <div className="pt-4">
