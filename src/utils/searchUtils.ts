@@ -32,6 +32,10 @@ export interface EngineConfiguration {
   fileSyntax: string;
   supportsExcludeDomains: boolean;
   supportsFiletype: boolean;
+  useAdvancedFormatting?: boolean;
+  includeDomainFormatter?: string;
+  excludeDomainFormatter?: string;
+  queryFormatter?: string;
 }
 
 export const SEARCH_ENGINES: SearchEngine[] = [
@@ -117,7 +121,23 @@ const DEFAULT_ENGINE_CONFIGS: Record<string, EngineConfiguration> = {
     excludeSyntax: '',
     fileSyntax: 'mime:$type',
     supportsExcludeDomains: false,
-    supportsFiletype: true
+    supportsFiletype: true,
+    useAdvancedFormatting: true,
+    includeDomainFormatter: `function formatYandexDomain(domain) {
+  // Remove protocol and www if present
+  let cleanDomain = domain.replace(/^(https?:\\/\\/)?((www|web)\\.)?/, '');
+  
+  // Handle wildcard domains
+  if (cleanDomain.startsWith('*.')) {
+    cleanDomain = cleanDomain.substring(2);
+  }
+  
+  // Split by dots and reverse
+  const parts = cleanDomain.split('.');
+  const reversed = parts.reverse().join('.');
+  
+  return 'rhost:' + reversed;
+}`
   },
   baidu: {
     includeSyntax: 'site:$domain',
@@ -228,6 +248,36 @@ export const saveEngineConfigurations = (configs: Record<string, EngineConfigura
   localStorage.setItem('dorking_engine_configs', JSON.stringify(configs));
 };
 
+// Function to safely evaluate a formatter function
+export const evaluateFormatterFunction = (formatterCode: string, input: string): string => {
+  try {
+    // Create a safe function that takes the input
+    // eslint-disable-next-line no-new-func
+    const formatterFn = new Function('input', `
+      "use strict";
+      // The formatter function
+      ${formatterCode}
+      
+      // Extract the actual function name by finding the function keyword
+      const functionMatch = ${JSON.stringify(formatterCode)}.match(/function\\s+([\\w_$]+)\\s*\\(/);
+      if (!functionMatch) {
+        // If no named function, assume it's an anonymous function or arrow function
+        return (${formatterCode})(input);
+      }
+      
+      // Call the named function with the input
+      const functionName = functionMatch[1];
+      return eval(functionName)(input);
+    `);
+    
+    return formatterFn(input) || input;
+  } catch (error) {
+    console.error('Error evaluating formatter function:', error);
+    // Return the original input if there's an error
+    return input;
+  }
+};
+
 export const buildSearchUrl = (
   engine: SearchEngine,
   query: string,
@@ -238,11 +288,24 @@ export const buildSearchUrl = (
   const configs = getEngineConfigurations();
   const engineConfig = configs[engine.id] || DEFAULT_ENGINE_CONFIGS[engine.id];
 
+  // Apply query formatter if available
+  if (engineConfig.useAdvancedFormatting && engineConfig.queryFormatter) {
+    searchQuery = evaluateFormatterFunction(engineConfig.queryFormatter, searchQuery);
+  }
+
   // Add domain scoping
   if (includeDomains.length > 0 && engineConfig.includeSyntax) {
     const includeTerms = includeDomains
       .filter(domain => domain.trim() !== '')
-      .map(domain => engineConfig.includeSyntax.replace('$domain', domain));
+      .map(domain => {
+        // If advanced formatting is enabled and a formatter is provided, use it
+        if (engineConfig.useAdvancedFormatting && engineConfig.includeDomainFormatter) {
+          const formattedDomain = evaluateFormatterFunction(engineConfig.includeDomainFormatter, domain);
+          return formattedDomain;
+        }
+        // Otherwise use the standard syntax
+        return engineConfig.includeSyntax.replace('$domain', domain);
+      });
     
     searchQuery += ' ' + includeTerms.join(' OR ');
   }
@@ -251,7 +314,15 @@ export const buildSearchUrl = (
   if (excludeDomains.length > 0 && engineConfig.supportsExcludeDomains && engineConfig.excludeSyntax) {
     const excludeTerms = excludeDomains
       .filter(domain => domain.trim() !== '')
-      .map(domain => engineConfig.excludeSyntax.replace('$domain', domain));
+      .map(domain => {
+        // If advanced formatting is enabled and a formatter is provided, use it
+        if (engineConfig.useAdvancedFormatting && engineConfig.excludeDomainFormatter) {
+          const formattedDomain = evaluateFormatterFunction(engineConfig.excludeDomainFormatter, domain);
+          return formattedDomain;
+        }
+        // Otherwise use the standard syntax
+        return engineConfig.excludeSyntax.replace('$domain', domain);
+      });
     
     searchQuery += ' ' + excludeTerms.join(' ');
   }
@@ -340,7 +411,7 @@ export const generateId = (): string => {
 // Export and Import functionality
 export const exportAppData = (): string => {
   const data = {
-    version: '1.0',
+    version: '1.1', // Updated version for advanced formatters
     timestamp: Date.now(),
     searchHistory: getSearchHistory(),
     tags: getTags(),

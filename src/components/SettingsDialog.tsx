@@ -8,7 +8,7 @@ import { Textarea } from './ui/textarea';
 import { Switch } from './ui/switch';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs';
 import { ScrollArea } from './ui/scroll-area';
-import { Settings, Save, Trash2, Plus, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Settings, Save, Trash2, Plus, ToggleLeft, ToggleRight, Code } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { 
   SEARCH_ENGINES, 
@@ -19,7 +19,8 @@ import {
   removeSearchEngine,
   getCustomSearchEngines,
   toggleSearchEngine,
-  getEnabledSearchEngines
+  getEnabledSearchEngines,
+  evaluateFormatterFunction
 } from '@/utils/searchUtils';
 
 interface EngineConfigurationProps {
@@ -38,6 +39,10 @@ export interface EngineConfiguration {
   fileSyntax: string;
   supportsExcludeDomains: boolean;
   supportsFiletype: boolean;
+  useAdvancedFormatting?: boolean;
+  includeDomainFormatter?: string;
+  excludeDomainFormatter?: string;
+  queryFormatter?: string;
 }
 
 const defaultEngineConfig: EngineConfiguration = {
@@ -45,8 +50,15 @@ const defaultEngineConfig: EngineConfiguration = {
   excludeSyntax: '-site:$domain',
   fileSyntax: 'filetype:$type',
   supportsExcludeDomains: true,
-  supportsFiletype: true
+  supportsFiletype: true,
+  useAdvancedFormatting: false
 };
+
+const defaultFormatterFunction = `function formatDomain(domain) {
+  // Your custom formatter logic here
+  // Example: return a modified version of the domain
+  return domain;
+}`;
 
 const EngineConfigurationPanel: React.FC<EngineConfigurationProps> = ({ 
   engine, 
@@ -57,11 +69,26 @@ const EngineConfigurationPanel: React.FC<EngineConfigurationProps> = ({
   isEnabled,
   onToggle
 }) => {
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [testDomain, setTestDomain] = useState('example.com');
+  const [testResult, setTestResult] = useState('');
+  
   const handleChange = (key: keyof EngineConfiguration, value: string | boolean) => {
     onChange(engine.id, { 
       ...configuration, 
       [key]: value 
     });
+  };
+  
+  const handleTestFormatter = (formatterCode: string) => {
+    if (!testDomain.trim()) return;
+    
+    try {
+      const result = evaluateFormatterFunction(formatterCode, testDomain);
+      setTestResult(result);
+    } catch (error) {
+      setTestResult(`Error: ${(error as Error).message}`);
+    }
   };
 
   return (
@@ -102,56 +129,167 @@ const EngineConfigurationPanel: React.FC<EngineConfigurationProps> = ({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor={`${engine.id}-include`}>Include Domain Syntax</Label>
-        <Input 
-          id={`${engine.id}-include`}
-          value={configuration.includeSyntax} 
-          onChange={(e) => handleChange('includeSyntax', e.target.value)}
-          placeholder="e.g., site:$domain"
-          className="font-mono"
-        />
-        <p className="text-xs text-muted-foreground">Use $domain as placeholder for the domain</p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label htmlFor={`${engine.id}-exclude`}>Exclude Domain Syntax</Label>
-            <Switch
-              id={`${engine.id}-supports-exclude`}
-              checked={configuration.supportsExcludeDomains}
-              onCheckedChange={(checked) => handleChange('supportsExcludeDomains', checked)}
-            />
-          </div>
-          <Input 
-            id={`${engine.id}-exclude`}
-            value={configuration.excludeSyntax} 
-            onChange={(e) => handleChange('excludeSyntax', e.target.value)}
-            placeholder="e.g., -site:$domain"
-            className="font-mono"
-            disabled={!configuration.supportsExcludeDomains}
+        <div className="flex items-center justify-between">
+          <Label htmlFor={`${engine.id}-advanced`}>Advanced Formatting</Label>
+          <Switch
+            id={`${engine.id}-advanced`}
+            checked={!!configuration.useAdvancedFormatting}
+            onCheckedChange={(checked) => {
+              handleChange('useAdvancedFormatting', checked);
+              setShowAdvanced(checked);
+            }}
           />
         </div>
-
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label htmlFor={`${engine.id}-file`}>File Type Syntax</Label>
-            <Switch
-              id={`${engine.id}-supports-file`}
-              checked={configuration.supportsFiletype}
-              onCheckedChange={(checked) => handleChange('supportsFiletype', checked)}
-            />
-          </div>
-          <Input 
-            id={`${engine.id}-file`}
-            value={configuration.fileSyntax} 
-            onChange={(e) => handleChange('fileSyntax', e.target.value)}
-            placeholder="e.g., filetype:$type"
-            className="font-mono"
-            disabled={!configuration.supportsFiletype}
-          />
-        </div>
+        <p className="text-xs text-muted-foreground">
+          Toggle to use custom JavaScript functions for formatting search queries
+        </p>
       </div>
+
+      {!configuration.useAdvancedFormatting && (
+        <>
+          <div className="space-y-2">
+            <Label htmlFor={`${engine.id}-include`}>Include Domain Syntax</Label>
+            <Input 
+              id={`${engine.id}-include`}
+              value={configuration.includeSyntax} 
+              onChange={(e) => handleChange('includeSyntax', e.target.value)}
+              placeholder="e.g., site:$domain"
+              className="font-mono"
+            />
+            <p className="text-xs text-muted-foreground">Use $domain as placeholder for the domain</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor={`${engine.id}-exclude`}>Exclude Domain Syntax</Label>
+                <Switch
+                  id={`${engine.id}-supports-exclude`}
+                  checked={configuration.supportsExcludeDomains}
+                  onCheckedChange={(checked) => handleChange('supportsExcludeDomains', checked)}
+                />
+              </div>
+              <Input 
+                id={`${engine.id}-exclude`}
+                value={configuration.excludeSyntax} 
+                onChange={(e) => handleChange('excludeSyntax', e.target.value)}
+                placeholder="e.g., -site:$domain"
+                className="font-mono"
+                disabled={!configuration.supportsExcludeDomains}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor={`${engine.id}-file`}>File Type Syntax</Label>
+                <Switch
+                  id={`${engine.id}-supports-file`}
+                  checked={configuration.supportsFiletype}
+                  onCheckedChange={(checked) => handleChange('supportsFiletype', checked)}
+                />
+              </div>
+              <Input 
+                id={`${engine.id}-file`}
+                value={configuration.fileSyntax} 
+                onChange={(e) => handleChange('fileSyntax', e.target.value)}
+                placeholder="e.g., filetype:$type"
+                className="font-mono"
+                disabled={!configuration.supportsFiletype}
+              />
+            </div>
+          </div>
+        </>
+      )}
+
+      {configuration.useAdvancedFormatting && (
+        <div className="space-y-4 border-t border-border pt-4 mt-4">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor={`${engine.id}-include-formatter`}>Domain Include Formatter</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => handleTestFormatter(configuration.includeDomainFormatter || defaultFormatterFunction)}
+              >
+                <Code className="h-4 w-4 mr-1" />
+                Test
+              </Button>
+            </div>
+            <Textarea 
+              id={`${engine.id}-include-formatter`}
+              value={configuration.includeDomainFormatter || defaultFormatterFunction}
+              onChange={(e) => handleChange('includeDomainFormatter', e.target.value)}
+              placeholder={defaultFormatterFunction}
+              rows={8}
+              className="font-mono text-sm"
+            />
+            <p className="text-xs text-muted-foreground">
+              Write a function that takes a domain as input and returns a formatted string.
+            </p>
+          </div>
+          
+          {configuration.supportsExcludeDomains && (
+            <div className="space-y-2">
+              <Label htmlFor={`${engine.id}-exclude-formatter`}>Domain Exclude Formatter</Label>
+              <Textarea 
+                id={`${engine.id}-exclude-formatter`}
+                value={configuration.excludeDomainFormatter || defaultFormatterFunction}
+                onChange={(e) => handleChange('excludeDomainFormatter', e.target.value)}
+                placeholder={defaultFormatterFunction}
+                rows={8}
+                className="font-mono text-sm"
+              />
+              <p className="text-xs text-muted-foreground">
+                Write a function that takes a domain as input and returns a formatted string for exclusion.
+              </p>
+            </div>
+          )}
+          
+          <div className="space-y-2">
+            <Label htmlFor={`${engine.id}-query-formatter`}>Query Formatter (Optional)</Label>
+            <Textarea 
+              id={`${engine.id}-query-formatter`}
+              value={configuration.queryFormatter || ''}
+              onChange={(e) => handleChange('queryFormatter', e.target.value)}
+              placeholder="function formatQuery(query) {\n  // Modify the query if needed\n  return query;\n}"
+              rows={5}
+              className="font-mono text-sm"
+            />
+            <p className="text-xs text-muted-foreground">
+              Optional function to format the main search query.
+            </p>
+          </div>
+          
+          <div className="space-y-2 mt-4 border border-border rounded-md p-4">
+            <Label htmlFor={`${engine.id}-test-domain`}>Test Domain Formatter</Label>
+            <div className="flex space-x-2">
+              <Input 
+                id={`${engine.id}-test-domain`}
+                value={testDomain}
+                onChange={(e) => setTestDomain(e.target.value)}
+                placeholder="example.com"
+                className="font-mono"
+              />
+              <Button 
+                type="button" 
+                variant="outline"
+                onClick={() => handleTestFormatter(configuration.includeDomainFormatter || defaultFormatterFunction)}
+              >
+                Test
+              </Button>
+            </div>
+            {testResult && (
+              <div className="mt-2">
+                <Label>Result:</Label>
+                <div className="mt-1 p-2 bg-black/10 rounded-md font-mono text-sm overflow-auto break-all">
+                  {testResult}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -338,7 +476,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose }) => {
         <DialogHeader>
           <DialogTitle className="flex items-center text-xl">
             <Settings className="mr-2 h-5 w-5" />
-            Dorking Settings
+            Search Engine Settings
           </DialogTitle>
         </DialogHeader>
 
@@ -455,17 +593,41 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose }) => {
           
           <TabsContent value="about" className="p-4">
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold">About Dorking</h3>
-              <p>Dorking is a 99% vibe coded advanced search query builder that helps you create powerful search queries for various search engines.</p>
-              <p className="text-sm text-muted-foreground">Version 1.2.0</p>
+              <h3 className="text-lg font-semibold">About Advanced Search</h3>
+              <p>This tool helps you create powerful search queries for various search engines with custom formatting.</p>
               
-              <div className="pt-4">
-                <h4 className="font-medium">Syntax Help:</h4>
-                <ul className="list-disc pl-5 text-sm space-y-1 pt-2">
-                  <li><span className="font-mono">$domain</span> - Placeholder for domain in include/exclude syntax</li>
-                  <li><span className="font-mono">$type</span> - Placeholder for file type in file type syntax</li>
-                </ul>
+              <div className="border-t border-border pt-4 mt-4">
+                <h4 className="font-medium">Advanced Formatting</h4>
+                <p className="mt-2 text-sm">Each search engine can use custom JavaScript functions to format domains and queries differently:</p>
+                
+                <div className="mt-2 space-y-2">
+                  <div>
+                    <h5 className="font-medium text-sm">Domain Include Formatter</h5>
+                    <p className="text-xs text-muted-foreground">
+                      This function formats domains for inclusion in search. For example, Yandex requires domains in reverse order.
+                    </p>
+                    <pre className="text-xs bg-black/10 p-2 rounded-md mt-1 overflow-x-auto">
+                      {`function formatYandexDomain(domain) {
+  // Clean domain from protocols and www
+  let cleanDomain = domain.replace(/^(https?:\\/\\/)?((www|web)\\.)?/, '');
+  
+  // Handle wildcard domains
+  if (cleanDomain.startsWith('*.')) {
+    cleanDomain = cleanDomain.substring(2);
+  }
+  
+  // Split by dots and reverse
+  const parts = cleanDomain.split('.');
+  const reversed = parts.reverse().join('.');
+  
+  return 'rhost:' + reversed;
+}`}
+                    </pre>
+                  </div>
+                </div>
               </div>
+              
+              <p className="text-sm text-muted-foreground">Version 1.3.0</p>
             </div>
           </TabsContent>
         </Tabs>
