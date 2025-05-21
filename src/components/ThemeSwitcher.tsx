@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import {
   DropdownMenu,
@@ -6,7 +7,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Sun, Moon, MonitorSmartphone } from 'lucide-react'; // Example icons
+import { Sun, Moon, MonitorSmartphone } from 'lucide-react';
 
 const themes = [
   { name: 'light', label: 'Light', icon: <Sun className="h-4 w-4 mr-2" /> },
@@ -24,6 +25,7 @@ const ThemeSwitcher: React.FC = () => {
     const storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
     // If a theme is stored, use it, otherwise default to 'light'
     const initialTheme = storedTheme || 'light'; 
+    setCurrentTheme(initialTheme);
     applyTheme(initialTheme);
   }, []);
 
@@ -32,6 +34,8 @@ const ThemeSwitcher: React.FC = () => {
       document.documentElement.dataset.theme = themeName;
       localStorage.setItem(THEME_STORAGE_KEY, themeName);
       setCurrentTheme(themeName);
+      // Dispatch an event that the theme has changed
+      window.dispatchEvent(new Event('theme-changed'));
     } else {
       // Fallback to light theme if an invalid themeName is somehow passed
       document.documentElement.dataset.theme = 'light';

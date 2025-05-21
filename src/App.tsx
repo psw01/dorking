@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -13,10 +13,29 @@ const THEME_STORAGE_KEY = 'app-theme'; // Same key as in ThemeSwitcher
 
 const App: React.FC = () => {
   // Effect to apply stored theme on initial load
-  React.useEffect(() => {
-    const storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
-    const initialTheme = storedTheme || 'light'; // Default to 'light'
-    document.documentElement.dataset.theme = initialTheme;
+  useEffect(() => {
+    const applyTheme = () => {
+      const storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+      const initialTheme = storedTheme || 'light'; // Default to 'light'
+      document.documentElement.dataset.theme = initialTheme;
+    };
+
+    // Apply theme on initial load
+    applyTheme();
+
+    // Listen for theme changes
+    window.addEventListener('theme-changed', applyTheme);
+    window.addEventListener('storage', (event) => {
+      if (event.key === THEME_STORAGE_KEY) {
+        applyTheme();
+      }
+    });
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('theme-changed', applyTheme);
+      window.removeEventListener('storage', applyTheme);
+    };
   }, []);
 
   return (
