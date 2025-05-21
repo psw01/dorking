@@ -95,7 +95,7 @@ export const DEFAULT_TAGS: Tag[] = [
 ];
 
 // Default engine configurations
-const DEFAULT_ENGINE_CONFIGS: Record<string, EngineConfiguration> = {
+export const DEFAULT_ENGINE_CONFIGS: Record<string, EngineConfiguration> = {
   google: {
     includeSyntax: 'site:$domain',
     excludeSyntax: '-site:$domain',
