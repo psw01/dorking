@@ -26,6 +26,7 @@ interface SearchFormProps {
 const SearchForm: React.FC<SearchFormProps> = ({ preloadedSearch }) => {
   const [query, setQuery] = useState<string>('');
   const [selectedEngines, setSelectedEngines] = useState<string[]>(['google']);
+  const [fileType, setFileType] = useState<string>('');
   const [includeDomains, setIncludeDomains] = useState<string[]>(['']);
   const [excludeDomains, setExcludeDomains] = useState<string[]>(['']);
   const [availableEngines, setAvailableEngines] = useState<SearchEngine[]>([]);
@@ -71,7 +72,7 @@ const SearchForm: React.FC<SearchFormProps> = ({ preloadedSearch }) => {
       const enabledEngineIds = getEnabledSearchEngines();
       const filteredEngines = formState.engines.filter(id => enabledEngineIds.includes(id));
       setSelectedEngines(filteredEngines);
-      
+      setFileType(formState.fileType || '');
       setIncludeDomains(formState.includeDomains);
       setExcludeDomains(formState.excludeDomains);
       
@@ -131,11 +132,15 @@ const SearchForm: React.FC<SearchFormProps> = ({ preloadedSearch }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Filter out empty domains first, as it's used in validation
+    const filteredIncludeDomains = includeDomains.filter(d => d.trim() !== '');
+    const filteredExcludeDomains = excludeDomains.filter(d => d.trim() !== '');
+
     // Validate
-    if (!query.trim()) {
+    if (!query.trim() && filteredIncludeDomains.length === 0) {
       toast({
-        title: "Search query required",
-        description: "Please enter a search term",
+        title: "Search input required",
+        description: "Please enter a search query or at least one 'Include Domain'.",
         variant: "destructive"
       });
       return;
@@ -150,10 +155,6 @@ const SearchForm: React.FC<SearchFormProps> = ({ preloadedSearch }) => {
       return;
     }
 
-    // Filter out empty domains
-    const filteredIncludeDomains = includeDomains.filter(d => d.trim() !== '');
-    const filteredExcludeDomains = excludeDomains.filter(d => d.trim() !== '');
-
     // Save to history
     const historyItem: SearchHistoryItem = {
       id: generateId(),
@@ -161,6 +162,7 @@ const SearchForm: React.FC<SearchFormProps> = ({ preloadedSearch }) => {
       engines: selectedEngines,
       includeDomains: filteredIncludeDomains,
       excludeDomains: filteredExcludeDomains,
+      fileType: fileType.trim(),
       timestamp: Date.now(),
       status: 'pending',
       tags: [],
@@ -179,7 +181,8 @@ const SearchForm: React.FC<SearchFormProps> = ({ preloadedSearch }) => {
           engine, 
           query, 
           filteredIncludeDomains, 
-          filteredExcludeDomains
+          filteredExcludeDomains,
+          fileType.trim()
         );
         window.open(searchUrl, '_blank');
       }
@@ -236,6 +239,22 @@ const SearchForm: React.FC<SearchFormProps> = ({ preloadedSearch }) => {
               No search engines are enabled. Enable search engines in Settings.
             </p>
           )}
+        </div>
+
+        <Separator />
+
+        {/* Filetype Section */}
+        <div className="space-y-2">
+          <Label htmlFor="fileType" className="text-lg font-mono">
+            Filetype (e.g., pdf, docx)
+          </Label>
+          <Input
+            id="fileType"
+            placeholder="Enter filetype (optional)"
+            value={fileType}
+            onChange={(e) => setFileType(e.target.value)}
+            className="cyber-input font-mono text-base"
+          />
         </div>
 
         <Separator />
@@ -324,7 +343,7 @@ const SearchForm: React.FC<SearchFormProps> = ({ preloadedSearch }) => {
           <Button 
             type="submit" 
             className="cyber-button w-full text-lg py-6 group"
-            disabled={!query.trim() || selectedEngines.length === 0}
+            disabled={(query.trim() === '' && includeDomains.filter(d => d.trim() !== '').length === 0) || selectedEngines.length === 0}
           >
             <Search className="mr-2 h-6 w-6 group-hover:animate-pulse" />
             Execute Search
