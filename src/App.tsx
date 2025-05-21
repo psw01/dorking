@@ -5,13 +5,23 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
+import React, { useEffect } from 'react'; // Import useEffect
 
 const queryClient = new QueryClient();
+const THEME_STORAGE_KEY = 'app-theme'; // Same key as in ThemeSwitcher
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
+const App = () => {
+  // Effect to apply stored theme on initial load
+  useEffect(() => {
+    const storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+    const initialTheme = storedTheme || 'light'; // Default to 'light'
+    document.documentElement.dataset.theme = initialTheme;
+  }, []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
       <Sonner />
       <BrowserRouter>
         <Routes>
