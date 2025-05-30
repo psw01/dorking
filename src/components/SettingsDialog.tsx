@@ -481,11 +481,10 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose }) => {
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 overflow-hidden flex flex-col">
-          <TabsList className="mx-auto mb-4 grid grid-cols-4 w-full"> {/* Adjusted grid-cols to 4 */}
+          <TabsList className="mx-auto mb-4 grid grid-cols-3 w-full max-w-md">
             <TabsTrigger value="engines">Search Engines</TabsTrigger>
             <TabsTrigger value="add">Add Engine</TabsTrigger>
             <TabsTrigger value="about">About</TabsTrigger>
-            <TabsTrigger value="formatting">Formatting Guide</TabsTrigger> {/* Renamed and new trigger */}
           </TabsList>
           
           <TabsContent value="engines" className="flex-1 overflow-hidden">
@@ -592,25 +591,14 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose }) => {
             </ScrollArea>
           </TabsContent>
           
-          <TabsContent value="about" className="p-4 flex-1 overflow-hidden">
-            <ScrollArea className="h-[calc(60vh-120px)]">
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">About Advanced Search</h3>
-                <p>This tool helps you craft advanced search queries across multiple search engines. You can customize search engine behavior, manage search history, and use advanced operators like site-specific search, domain exclusion, and filetype filtering.</p>
-                <p className="text-sm text-muted-foreground">Version: 1.0.0</p>
-              </div>
-            </ScrollArea>
-          </TabsContent>
-
-          <TabsContent value="formatting" className="p-4 flex-1 overflow-hidden"> {/* Renamed value */}
-            <ScrollArea className="h-[calc(60vh-120px)]">
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Advanced Formatting Guide</h3> {/* Changed title */}
-                <p>This tool helps you create powerful search queries for various search engines with custom formatting.</p>
-                
-                <div className="border-t border-border pt-4 mt-4">
-                  <h4 className="font-medium">Advanced Formatting Explained</h4> {/* Changed subtitle */}
-                  <p className="mt-2 text-sm">Each search engine can use custom JavaScript functions to format domains and queries differently:</p>
+          <TabsContent value="about" className="p-4">
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">About Advanced Search</h3>
+              <p>This tool helps you create powerful search queries for various search engines with custom formatting.</p>
+              
+              <div className="border-t border-border pt-4 mt-4">
+                <h4 className="font-medium">Advanced Formatting</h4>
+                <p className="mt-2 text-sm">Each search engine can use custom JavaScript functions to format domains and queries differently:</p>
                 
                 <div className="mt-2 space-y-2">
                   <div>
@@ -639,9 +627,8 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose }) => {
                 </div>
               </div>
               
-              <p className="text-sm text-muted-foreground">Guide Version 1.3.0</p> {/* Clarified version */}
+              <p className="text-sm text-muted-foreground">Version 1.3.0</p>
             </div>
-            </ScrollArea>
           </TabsContent>
         </Tabs>
 

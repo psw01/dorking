@@ -6,7 +6,6 @@ import { Button } from "./ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import SettingsDialog from './SettingsDialog';
 import ImportDialog from './ImportDialog';
-import ThemeSwitcher from './ThemeSwitcher'; // Import ThemeSwitcher
 import { exportAppData } from '@/utils/searchUtils';
 import { useToast } from '@/hooks/use-toast';
 
@@ -105,8 +104,6 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
             </TooltipTrigger>
             <TooltipContent>Settings</TooltipContent>
           </Tooltip>
-          
-          <ThemeSwitcher /> {/* Add ThemeSwitcher here */}
         </div>
       </div>
       

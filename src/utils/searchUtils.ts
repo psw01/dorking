@@ -24,7 +24,6 @@ export type SearchHistoryItem = {
   tags: string[];
   notes?: string;
   bookmarked?: boolean; // Added for bookmark feature
-  fileType?: string; 
 };
 
 export interface EngineConfiguration {
@@ -95,7 +94,7 @@ export const DEFAULT_TAGS: Tag[] = [
 ];
 
 // Default engine configurations
-export const DEFAULT_ENGINE_CONFIGS: Record<string, EngineConfiguration> = {
+const DEFAULT_ENGINE_CONFIGS: Record<string, EngineConfiguration> = {
   google: {
     includeSyntax: 'site:$domain',
     excludeSyntax: '-site:$domain',
@@ -125,25 +124,19 @@ export const DEFAULT_ENGINE_CONFIGS: Record<string, EngineConfiguration> = {
     supportsFiletype: true,
     useAdvancedFormatting: true,
     includeDomainFormatter: `function formatYandexDomain(domain) {
-  // Handle new wildcard case: "example.*" -> "site:example"
-  if (domain.endsWith('.*')) {
-    const baseDomain = domain.substring(0, domain.length - 2);
-    return 'site:' + baseDomain;
-  }
-
   // Remove protocol and www if present
   let cleanDomain = domain.replace(/^(https?:\\/\\/)?((www|web)\\.)?/, '');
   
-  // Handle existing wildcard domains like "*.example.com"
+  // Handle wildcard domains
   if (cleanDomain.startsWith('*.')) {
     cleanDomain = cleanDomain.substring(2);
   }
   
-  // Split by dots and reverse for rhost
+  // Split by dots and reverse
   const parts = cleanDomain.split('.');
   const reversed = parts.reverse().join('.');
   
-  return 'rhost:' + reversed + '.*';
+  return 'rhost:' + reversed;
 }`
   },
   baidu: {
@@ -289,8 +282,7 @@ export const buildSearchUrl = (
   engine: SearchEngine,
   query: string,
   includeDomains: string[],
-  excludeDomains: string[],
-  fileType?: string
+  excludeDomains: string[]
 ): string => {
   let searchQuery = query.trim();
   const configs = getEngineConfigurations();
@@ -333,11 +325,6 @@ export const buildSearchUrl = (
       });
     
     searchQuery += ' ' + excludeTerms.join(' ');
-  }
-
-  // Add filetype if provided and supported
-  if (fileType && fileType.trim() !== '' && engineConfig.supportsFiletype && engineConfig.fileSyntax) {
-    searchQuery += ' ' + engineConfig.fileSyntax.replace('$type', fileType.trim());
   }
 
   return engine.url + encodeURIComponent(searchQuery);
@@ -469,6 +456,5 @@ export const getSearchAsFormState = (item: SearchHistoryItem) => {
     engines: item.engines,
     includeDomains: item.includeDomains.length > 0 ? item.includeDomains : [''],
     excludeDomains: item.excludeDomains.length > 0 ? item.excludeDomains : [''],
-    fileType: item.fileType || '',
   };
 };
